@@ -1,16 +1,27 @@
 // User service UUID: Change this to your generated service UUID
 const USER_SERVICE_UUID         = 'dc5a96e5-e7ab-4a6c-9051-ea5706f6b9e0'; // LED, Button
 // User service characteristics
-const LED_CHARACTERISTIC_UUID   = 'E9062E71-9E62-4BC6-B0D3-35CDCD9B027B';
-const BTN_CHARACTERISTIC_UUID   = '62FBD229-6EDD-4D1A-B554-5C4E1BB29169';
+const RING_CHARACTERISTIC_UUID   = 'E9062E71-9E62-4BC6-B0D3-35CDCD9B027B';
 
 // PSDI Service UUID: Fixed value for Developer Trial
 const PSDI_SERVICE_UUID         = 'E625601E-9E55-4597-A598-76018A0D293D'; // Device ID
 const PSDI_CHARACTERISTIC_UUID  = '26E2B12B-85F0-4F3F-9FDD-91D114270E6E';
 
+const TOP = 0;
+const LEFT = 1;
+const BUTTOM = 2;
+const RIGHT = 3;
+
 // UI settings
-let ledState = false; // true: LED on, false: LED off
-let clickCount = 0;
+let direction = 0; // 0: RIGHT, 1: LEFT
+let hole = Math.floor(Math.random() * Math.floor(4)); //     0: top, 1: right, 2: buttom, 3: left
+let vision = 0; // 0.3 ~ 2.0
+let fail = 0;
+let failed = '';
+let result = '';
+const directions = ["右", "左"];
+const visions = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.5, 2.0];
+
 
 // -------------- //
 // On window load //
@@ -24,45 +35,80 @@ window.onload = () => {
 // Handler functions //
 // ----------------- //
 
-function handlerToggleLed() {
-    ledState = !ledState;
+function gameOver(){
+    const elRetry = document.getElementById("retry");
+    elRetry.classList.remove("hidden");            
+    const elTop = document.getElementById("top");
+    elTop.disabled = true;            
+    const elLeft = document.getElementById("left");
+    elLeft.disabled = true;            
+    const elRight = document.getElementById("right");
+    elRight.disabled = true;            
+    const elButtom = document.getElementById("buttom");
+    elButtom.disabled = true;            
+}
+function retry(){
+    direction = 0;
+    result = '';
+    const elRetry = document.getElementById("retry");
+    elRetry.classList.add("hidden");
+    const elTop = document.getElementById("top");
+    elTop.disabled = false;            
+    const elLeft = document.getElementById("left");
+    elLeft.disabled = false;            
+    const elRight = document.getElementById("right");
+    elRight.disabled = false;            
+    const elButtom = document.getElementById("buttom");
+    elButtom.disabled = false;            
+    uiToggleLedButton();      
+}
+function handlerToggleLed(answer) {
+    if (hole != answer){
+        fail++;
+        failed = failed + '\u274c';
+        if (fail > 2 ){
+            failed = '\u200B';
+            fail = 0;
+            result = result + directions[direction] + ":" + ((vision > 0) ? parseFloat(visions[vision-1]).toFixed(1) : "測定不能");
+            direction++;
+            vision = 0;
+            if (direction > 1){
+                gameOver();
+            }
+        }
+    } else {
+        fail = 0;
+        failed = '\u200B';
+        vision++;
+        if (visions.length <= vision){
+            result = result + directions[direction] + ":" + parseFloat(visions[vision-1]).toFixed(1);
+            direction++;
+            vision = 0;
+            if (direction > 1){
+                gameOver();
+            }
+        }
+    }
+    hole = Math.floor(Math.random() * Math.floor(4)); 
 
-    uiToggleLedButton(ledState);
-    liffToggleDeviceLedState(ledState);
+    uiToggleLedButton();
+    liffToggleDeviceLedState();
 }
 
 // ------------ //
 // UI functions //
 // ------------ //
 
-function uiToggleLedButton(state) {
-    const el = document.getElementById("btn-led-toggle");
-    el.innerText = state ? "Switch LED OFF" : "Switch LED ON";
+function uiToggleLedButton() {
+    const trialEl = document.getElementById("trial");
+    trialEl.innerText = (direction < 2)? (directions[direction] + ':' + parseFloat(visions[vision]).toFixed(1)) : "";
 
-    if (state) {
-      el.classList.add("led-on");
-    } else {
-      el.classList.remove("led-on");
-    }
-}
+    const resultEl = document.getElementById("result");
+    resultEl.innerText = result;
 
-function uiCountPressButton() {
-    clickCount++;
+    const failEl = document.getElementById("fail");
+    failEl.innerText = failed;
 
-    const el = document.getElementById("click-count");
-    el.innerText = clickCount;
-}
-
-function uiToggleStateButton(pressed) {
-    const el = document.getElementById("btn-state");
-
-    if (pressed) {
-        el.classList.add("pressed");
-        el.innerText = "Pressed";
-    } else {
-        el.classList.remove("pressed");
-        el.innerText = "Released";
-    }
 }
 
 function uiToggleDeviceConnected(connected) {
@@ -88,7 +134,7 @@ function uiToggleDeviceConnected(connected) {
         elStatus.classList.add("inactive");
         elStatus.innerText = "Device disconnected";
         // Hide controls
-        elControls.classList.add("hidden");
+//        elControls.classList.add("hidden");
     }
 }
 
@@ -117,7 +163,7 @@ function uiStatusError(message, showLoadingAnimation) {
     elStatus.innerText = message;
 
     // Hide controls
-    elControls.classList.add("hidden");
+//    elControls.classList.add("hidden");
 }
 
 function makeErrorMsg(errorObj) {
@@ -165,8 +211,6 @@ function liffRequestDevice() {
 
 function liffConnectToDevice(device) {
     device.gatt.connect().then(() => {
-        document.getElementById("device-name").innerText = device.name;
-        document.getElementById("device-id").innerText = device.id;
 
         // Show status connected
         uiToggleDeviceConnected(true);
@@ -195,7 +239,6 @@ function liffConnectToDevice(device) {
             ledState = false;
             // Reset UI elements
             uiToggleLedButton(false);
-            uiToggleStateButton(false);
 
             // Try to reconnect
             initializeLiff();
@@ -209,18 +252,9 @@ function liffConnectToDevice(device) {
 
 function liffGetUserService(service) {
     // Button pressed state
-    service.getCharacteristic(BTN_CHARACTERISTIC_UUID).then(characteristic => {
-        liffGetButtonStateCharacteristic(characteristic);
-    }).catch(error => {
-        uiStatusError(makeErrorMsg(error), false);
-    });
+    service.getCharacteristic(RING_CHARACTERISTIC_UUID).then(characteristic => {
+        window.ringCharacteristic = characteristic;
 
-    // Toggle LED
-    service.getCharacteristic(LED_CHARACTERISTIC_UUID).then(characteristic => {
-        window.ledCharacteristic = characteristic;
-
-        // Switch off by default
-        liffToggleDeviceLedState(false);
     }).catch(error => {
         uiStatusError(makeErrorMsg(error), false);
     });
@@ -240,31 +274,17 @@ function liffGetPSDIService(service) {
     });
 }
 
-function liffGetButtonStateCharacteristic(characteristic) {
-    // Add notification hook for button state
-    // (Get notified when button state changes)
-    characteristic.startNotifications().then(() => {
-        characteristic.addEventListener('characteristicvaluechanged', e => {
-            const val = (new Uint8Array(e.target.value.buffer))[0];
-            if (val > 0) {
-                // press
-                uiToggleStateButton(true);
-            } else {
-                // release
-                uiToggleStateButton(false);
-                uiCountPressButton();
-            }
-        });
-    }).catch(error => {
+function liffToggleDeviceRingState(state) {
+    window.ringCharacteristic.writeValue(
+        state
+    ).catch(error => {
         uiStatusError(makeErrorMsg(error), false);
     });
 }
 
-function liffToggleDeviceLedState(state) {
-    // on: 0x01
-    // off: 0x00
+function liffToggleDeviceLedState(stae) {
     window.ledCharacteristic.writeValue(
-        state ? new Uint8Array([0x01]) : new Uint8Array([0x00])
+        new Uint8Array([visions[vision] * 10, hole])
     ).catch(error => {
         uiStatusError(makeErrorMsg(error), false);
     });

@@ -10,44 +10,38 @@
 
   <body>
     <!-- Title -->
-    <h2>LINE Things Starter</h2>
+    <h2>Vision Test</h2>
     <hr />
     <p>
       <img id="loading-animation" class="" src="loading.gif" height="14px" />
       <span id="status" class="inactive">Device disconnected</span>
     </p>
     <hr />
-    <div id="controls" class="hidden">
-      <!-- Device Info Table -->
-      <table class="device-info-table">
-        <tr>
-          <th class="device-info-cell device-info-key">Name</th>
-          <td class="device-info-cell device-info-val" id="device-name"></td>
-        </tr>
-        <tr>
-          <th class="device-info-cell device-info-key">ID</th>
-          <td class="device-info-cell device-info-val" id="device-id"></td>
-        </tr>
-        <tr>
-          <th class="device-info-cell device-info-key">PSDI</th>
-          <td class="device-info-cell device-info-val" id="device-psdi"></td>
-        </tr>
-        <tr>
-          <th class="device-info-cell device-info-key">Button state</th>
-          <td class="device-info-cell device-info-val">
-            <button id="btn-state" class="btn btn-state" disabled>Released</button>
-          </td>
-        </tr>
-        <tr>
-          <th class="device-info-cell device-info-key">Click count</th>
-          <td class="device-info-cell device-info-val" id="click-count">0</td>
-        </tr>
-      </table>
+    <div id="controls" class="_hidden_">
+      <div>
+        <ul class="button_top">
+            <button id="top" class="direction" onclick="handlerToggleLed(0)">上
+            </button>
+        </ul>
+        <ul class="button">
+            <button id="left" class="direction" onclick="handlerToggleLed(2)">左
+            </button>
+            <div class="panel"><div><span id="trial">右 0.3</span><br /><span id ="fail">&#x0323;</span></div>
+            </div>
+            <button id="right" class="direction" onclick="handlerToggleLed(1)">右
+            </button>
+        </ul>
+        <ul class="button_buttom">
+          <button id="buttom" class="direction" onclick="handlerToggleLed(3)">下
+          </button>
+        </ul>
+      </div>
       <hr />
-      <!-- Toggle LED -->
-      <p>
-        <button id="btn-led-toggle" class="btn btn-led-toggle" onclick="handlerToggleLed()">Switch LED ON</button>
-      </p>
+      <span id ="result"></span>
+      <div id ="retry" class="hidden">
+        <button id="retry_btn" onclick="retry()">再検査
+        </button>  
+      </div>
       <hr />
     </div>
   </body>

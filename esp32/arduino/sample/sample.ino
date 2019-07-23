@@ -3,6 +3,11 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
+#include <SPI.h>
+#include <EPD1in54.h>
+#include <EPDPaint.h>
+#include <stdint.h>
+
 // Device Name: Maximum 30 bytes
 #define DEVICE_NAME "LINE Things Trial ESP32"
 
@@ -19,6 +24,9 @@
 #define BUTTON 0
 #define LED1 2
 
+#define COLORED     0
+#define UNCOLORED   1
+
 BLEServer* thingsServer;
 BLESecurity *thingsSecurity;
 BLEService* userService;
@@ -31,6 +39,10 @@ bool deviceConnected = false;
 bool oldDeviceConnected = false;
 
 volatile int btnAction = 0;
+
+unsigned char image[40000];
+EPDPaint paint(image, 0, 0);    // width should be the multiple of 8
+EPD1in54 epd(33, 25, 26, 27); // reset, dc, cs, busy
 
 class serverCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
@@ -45,14 +57,45 @@ class serverCallbacks: public BLEServerCallbacks {
 class writeCallback: public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *bleWriteCharacteristic) {
     std::string value = bleWriteCharacteristic->getValue();
-    if ((char)value[0] <= 1) {
-      digitalWrite(LED1, (char)value[0]);
+    uint8_t* data = bleWriteCharacteristic->getData();
+    Serial.print("onWrite:");
+    if (value.length() > 0) {
+      draw(data[0], data[1]);
     }
+  }
+  void draw(int v, int di) {
+    float r = 1.5 / (v / 10.0); // 隙間 
+    float d = r * 5.0 / 2.0; // 半径
+    float sf = 6.6;
+  
+    Serial.print(d);
+    Serial.print(r);
+    paint.setRotate(ROTATE_0);
+    paint.setWidth(200);
+    paint.setHeight(200);
+  
+    // 外枠の描写
+    paint.clear(UNCOLORED);
+    paint.drawFilledCircle(100, 100, d * sf, COLORED);
+    paint.drawFilledCircle(100, 100, (d-r) * sf, UNCOLORED);
+    if ( di == 0) {
+      paint.drawFilledRectangle(100-(r/2)*sf, 100 -(d)*sf, 100+(r/2)*sf, 100, UNCOLORED);
+    } else if (di == 1) {    
+      paint.drawFilledRectangle(100, 100 -(r/2)*sf, 100+(d)*sf, 100 + (r/2)*sf, UNCOLORED);
+    } else if (di == 2) {
+      paint.drawFilledRectangle(100-(r/2)*sf, 100, 100+(r/2)*sf, 100 + (d)*sf, UNCOLORED);
+    } else if (di == 3) {
+      paint.drawFilledRectangle(100-(d)*sf, 100 -(r/2)*sf, 100, 100 + (r/2)*sf, UNCOLORED);
+    }
+    epd.setFrameMemory(paint.getImage(), 0, 0, paint.getWidth(), paint.getHeight());
+    epd.displayFrame();
   }
 };
 
 void setup() {
   Serial.begin(115200);
+
+  Serial.print("setup()");
 
   pinMode(LED1, OUTPUT);
   digitalWrite(LED1, 0);
@@ -71,6 +114,17 @@ void setup() {
   setupServices();
   startAdvertising();
   Serial.println("Ready to Connect");
+
+ if (epd.init(lutFullUpdate) != 0) {
+    Serial.print("e-Paper init failed");
+    return;
+  }
+
+  epd.clearFrameMemory(0xFF);   // bit set = white, bit reset = black
+  epd.displayFrame();
+  epd.clearFrameMemory(0xFF);   // bit set = white, bit reset = black
+  epd.displayFrame();
+
 }
 
 void loop() {
