@@ -66,7 +66,7 @@ function handlerToggleLed(answer) {
     if (hole != answer){
         fail++;
         failed = failed + '\u274c';
-        if (fail > 2 ){
+        if (fail > 1 ){
             failed = '\u200B';
             fail = 0;
             result = result + directions[direction] + ":" + ((vision > 0) ? parseFloat(visions[vision-1]).toFixed(1) : "測定不能");
