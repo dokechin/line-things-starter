@@ -92,7 +92,7 @@ function handlerToggleLed(answer) {
     hole = Math.floor(Math.random() * Math.floor(4)); 
 
     uiToggleLedButton();
-    liffToggleDeviceLedState();
+    liffToggleDeviceRingState();
 }
 
 // ------------ //
@@ -276,14 +276,6 @@ function liffGetPSDIService(service) {
 
 function liffToggleDeviceRingState(state) {
     window.ringCharacteristic.writeValue(
-        state
-    ).catch(error => {
-        uiStatusError(makeErrorMsg(error), false);
-    });
-}
-
-function liffToggleDeviceLedState(stae) {
-    window.ledCharacteristic.writeValue(
         new Uint8Array([visions[vision] * 10, hole])
     ).catch(error => {
         uiStatusError(makeErrorMsg(error), false);
