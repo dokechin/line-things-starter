@@ -64,7 +64,7 @@ class writeCallback: public BLECharacteristicCallbacks {
     }
   }
   void draw(int v, int di) {
-    float r = 1.5 / (v / 10.0); // 隙間 
+    float r = 0.9 / (v / 10.0); // 隙間  3m:0.9 ,5m:1.5
     float d = r * 5.0 / 2.0; // 半径
     float sf = 6.6;
   
