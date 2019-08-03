@@ -214,7 +214,6 @@ function liffConnectToDevice(device) {
 
         // Show status connected
         uiToggleDeviceConnected(true);
-        liffToggleDeviceRingState();
 
         // Get service
         device.gatt.getPrimaryService(USER_SERVICE_UUID).then(service => {
@@ -255,6 +254,7 @@ function liffGetUserService(service) {
     // Button pressed state
     service.getCharacteristic(RING_CHARACTERISTIC_UUID).then(characteristic => {
         window.ringCharacteristic = characteristic;
+        liffToggleDeviceRingState();
 
     }).catch(error => {
         uiStatusError(makeErrorMsg(error), false);
