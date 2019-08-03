@@ -214,6 +214,7 @@ function liffConnectToDevice(device) {
 
         // Show status connected
         uiToggleDeviceConnected(true);
+        liffToggleDeviceRingState();
 
         // Get service
         device.gatt.getPrimaryService(USER_SERVICE_UUID).then(service => {
